@@ -3,36 +3,46 @@ use v6;
 use Stache :Internals;
 use Test;
 
-is Stache::Block.new(
-    body    => 'はじめまして世界さん',
-    trim    => Nil,
-    context => 'raw',
-).render, 'はじめまして世界さん', 'raw context';
+my @tests = [
+    {
+        inp  => 'other-test',
+        outp => 'other-test',
+        name => 'parse raw template',
+    },
+    {
+        inp  => '{{ say "test"  }}',
+        outp => 'test',
+        name => 'parse lone raku template',
+    },
+    {
+        inp  => 'another-{{ say "test"  }}',
+        outp => 'another-test',
+        name => 'parse mixed raku template',
+    },
+    {
+        inp  => 'hello {{ # nil }} world',
+        outp => 'hello  world',
+        name => 'trim none',
+    },
+    {
+        inp  => 'hello {{<  say "X" }} world',
+        outp => 'helloX world',
+        name => 'trim left',
+    },
+    {
+        inp  => 'hello {{>  say "X" }} world',
+        outp => 'hello Xworld',
+        name => 'trim right',
+    },
+    {
+        inp  => 'hello {{-  say "X" }} world',
+        outp => 'helloXworld',
+        name => 'trim both',
+    },
+];
 
-is Stache::Block.new(
-    body    => 'はじめまして',
-    trim    => Nil,
-    context => 'raw',
-    next-block => Stache::Block.new(
-        body    => 'say "世界"',
-        trim    => Nil,
-        context => 'raku',
-        next-block => Stache::Block.new(
-            body    => 'say "さん"',
-            trim    => Nil,
-            context => 'raku',
-        )
-    )
-).render, 'はじめまして世界さん', 'raku context';
-
-is Stache::Grammar.parse('other-test').made, 'other-test', 'parse raw template';
-is Stache::Grammar.parse('{{ say "test"  }}').made, 'test', 'parse raku template';
-is Stache::Grammar.parse('another-{{ say "test"  }}').made, 'another-test', 'parse mixed';
-
-is Stache::Grammar.parse('hello {{  # none }} world').made, 'hello  world';
-is Stache::Grammar.parse('hello {{< # pre  }} world').made, 'hello world';
-is Stache::Grammar.parse('hello {{> # post }} world').made, 'hello world';
-is Stache::Grammar.parse('hello {{- # both  }} world').made, 'helloworld';
+plan @tests.elems;
+is Stache::Grammar.parse($_<inp>).made, $_<outp>, $_<name> for @tests;
 
 q:to/EOF/,
 {{
