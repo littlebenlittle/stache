@@ -68,7 +68,7 @@ grammar Grammar is export(:Internals) {
                 body       => ($/<text>.trim // '').Str,
                 trim       => $trim-type,
                 context    => 'raku',
-                next-block => $/<body>.defined ?? $/<stache>.made !! Nil,
+                next-block => $/<body>.defined ?? $/<body>.made !! Nil,
             );
         }
     }
