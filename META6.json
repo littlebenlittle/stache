@@ -1,0 +1,18 @@
+{
+  "meta-version": "0",
+  "name": "Stache",
+  "version": "0.0.0",
+  "auth": "github:littlebenlittle",
+  "description": "an opinionated mustache-style template language",
+  "source-url": "TODO",
+  "perl": "6.d",
+  "author": "Ben Little <ben.little@fruition.net>",
+  "tags": [
+    "TODO",
+    "TODO"
+  ],
+  "license": "Artistic-2.0",
+  "provides": {
+    "Stache": "lib/Stache.rakumod"
+  }
+}
