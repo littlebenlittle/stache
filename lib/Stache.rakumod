@@ -3,33 +3,25 @@ unit package Stache:ver<0.0.0>;
 
 enum trim is export(:Internals) <left right both none>;
 
-sub process-raku(Str:D $body) is export(:Internals) {
-    my $cmd = « $*EXECUTABLE -e "'$body'" »;
-    my $proc = shell $cmd, :out;
-    return $proc.out.slurp(:close).chomp;
+class Block is export(:Internals) {
+    has Str   $.body    is required;
+    has trim  $.trim    is required;
+    has Block $.next-block;
+    has Block $.prev-block is rw;
+    method render(-->Str:D) {*}
 }
 
-class Block is export(:Internals) {
-    has Str   $.body is required;
-    has trim  $.trim is required;
-    has Str   $.context is required;
-    has Block $.next-block;
+class Raw-Block is Block is export(:Internals) {
     method render {
-        my $render = '';
-        given self.context {
-            when 'raw'  { $render = self.body }
-            when 'raku' { $render = process-raku(self.body) }
-        }
-        given self.trim {
-            my &terminal-whitespace = /' '+$/;
-            when right { $render = $render.subst: &terminal-whitespace, '' }
-            when both  { $render = $render.subst: &terminal-whitespace, ''}
-            default    { $render = $render }
-        }
-        if defined self.next-block {
-            $render = $render ~ self.next-block.render;
-        }
-        return $render;
+        return self.body;
+    }
+}
+
+class Raku-Block is Block is export(:Internals) {
+    method render {
+        my $cmd = « $*EXECUTABLE -e "'{self.body}'" »;
+        my $proc = shell $cmd, :out;
+        return $proc.out.slurp(:close).chomp;
     }
 }
 
@@ -41,17 +33,20 @@ grammar Grammar is export(:Internals) {
     token trim-tag { <+[<>-]> }
     class Actions {
         method TOP($/) {
-            my $doc = '';
             my $block = $/<body>.defined
                      ?? $/<body>.made
                      !! $/<stache>.made;
-            make $block.render;
+            my $doc = '';
+            while $block.defined {
+                $doc   ~= $block.render;
+                $block .= next-block;
+            }
+            make $doc;
         }
         method body($/) {
-            make Block.new(
+            make Raw-Block.new(
                 body       => $/<text>.Str,
                 trim       => none,
-                context    => 'raw',
                 next-block => $/<stache>.defined ?? $/<stache>.made !! Nil,
             );
         }
@@ -64,16 +59,17 @@ grammar Grammar is export(:Internals) {
                 when '-' { $trim-type = both  }
                 default  { fail "unrecognized trim tag: {$/<trim-tag>}" }
             }
-            make Block.new(
-                body       => ($/<text>.trim // '').Str,
+            my $next-block = $/<body>.made if $/<body>.defined;
+            my $block = Raku-Block.new(
+                body       => $/<text>.trim,
                 trim       => $trim-type,
-                context    => 'raku',
-                next-block => $/<body>.defined ?? $/<body>.made !! Nil,
+                next-block => $next-block,
             );
+            $next-block.prev-block = $block;
+            make $block;
         }
     }
     method parse($target, Mu :$actions = Actions, |c) {
-        # say "parsing q:to/EOF/\n$target\nEOF";
         callwith($target, :actions($actions), |c);
     }
 }
