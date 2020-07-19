@@ -1,7 +1,7 @@
 
 unit package Stache:ver<0.0.0>;
 
-enum trim is export(:Internals) <pre post both none>;
+enum trim is export(:Internals) <left right both none>;
 
 sub process-raku(Str:D $body) is export(:Internals) {
     my $cmd = « $*EXECUTABLE -e "'$body'" »;
@@ -22,9 +22,9 @@ class Block is export(:Internals) {
         }
         given self.trim {
             my &terminal-whitespace = /' '+$/;
-            when post { $render = $render.subst: &terminal-whitespace, '' }
-            when both { $render = $render.subst: &terminal-whitespace, ''}
-            default   { $render = $render }
+            when right { $render = $render.subst: &terminal-whitespace, '' }
+            when both  { $render = $render.subst: &terminal-whitespace, ''}
+            default    { $render = $render }
         }
         if defined self.next-block {
             $render = $render ~ self.next-block.render;
@@ -59,8 +59,8 @@ grammar Grammar is export(:Internals) {
             my $trim-type;
             given $/<trim-tag> {
                 when Nil { $trim-type = none  }
-                when '<' { $trim-type = pre   }
-                when '>' { $trim-type = post  }
+                when '<' { $trim-type = left   }
+                when '>' { $trim-type = right  }
                 when '-' { $trim-type = both  }
                 default  { fail "unrecognized trim tag: {$/<trim-tag>}" }
             }
