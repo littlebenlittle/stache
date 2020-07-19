@@ -25,15 +25,14 @@ is Stache::Block.new(
     )
 ).render, 'はじめまして世界さん', 'raku context';
 
-# is Stache::Grammar.parse('other-test').made, 'other-test', 'parse raw template';
+is Stache::Grammar.parse('other-test').made, 'other-test', 'parse raw template';
 is Stache::Grammar.parse('{{ say "test"  }}').made, 'test', 'parse raku template';
-# is Stache::Grammar.parse('another-{{ say "test"  }}').made, 'another-test', 'parse mixed';
+is Stache::Grammar.parse('another-{{ say "test"  }}').made, 'another-test', 'parse mixed';
 
-# is Stache::Grammar.parse('hello {{  # none }} world').made, 'hello  world';
-# is Stache::Grammar.parse('hello {{< # pre  }} world').made, 'hello world';
-# is Stache::Grammar.parse('hello {{> # post }} world').made, 'hello world';
-# is Stache::Grammar.parse('hello {{- # both  }} world').made, 'helloworld';
-
+is Stache::Grammar.parse('hello {{  # none }} world').made, 'hello  world';
+is Stache::Grammar.parse('hello {{< # pre  }} world').made, 'hello world';
+is Stache::Grammar.parse('hello {{> # post }} world').made, 'hello world';
+is Stache::Grammar.parse('hello {{- # both  }} world').made, 'helloworld';
 
 q:to/EOF/,
 {{

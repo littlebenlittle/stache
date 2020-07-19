@@ -5,7 +5,6 @@ enum trim is export(:Internals) <pre post both none>;
 
 sub process-raku(Str:D $body) is export(:Internals) {
     my $cmd = « $*EXECUTABLE -e "'$body'" »;
-    # say "execing $cmd";
     my $proc = shell $cmd, :out;
     return $proc.out.slurp(:close).chomp;
 }
@@ -46,11 +45,7 @@ grammar Grammar is export(:Internals) {
             my $block = $/<body>.defined
                      ?? $/<body>.made
                      !! $/<stache>.made;
-            while $block.defined {
-                $doc   ~= $block.render;
-                $block .= next-block;
-            }
-            make $doc;
+            make $block.render;
         }
         method body($/) {
             make Block.new(
@@ -64,8 +59,8 @@ grammar Grammar is export(:Internals) {
             my $trim-type;
             given $/<trim-tag> {
                 when Nil { $trim-type = none  }
-                when '<' { $trim-type = pre  }
-                when '>' { $trim-type = post }
+                when '<' { $trim-type = pre   }
+                when '>' { $trim-type = post  }
                 when '-' { $trim-type = both  }
                 default  { fail "unrecognized trim tag: {$/<trim-tag>}" }
             }
