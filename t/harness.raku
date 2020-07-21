@@ -25,17 +25,17 @@ my @tests = [
         name => 'trim none',
     },
     {
-        inp  => 'hello {{<  say "X" }} world',
-        outp => 'helloX world',
-        name => 'trim left',
-    },
-    {
-        inp  => 'hello {{>  say "X" }} world',
+        inp  => 'hello {{> say "X" }} world',
         outp => 'hello Xworld',
         name => 'trim right',
     },
     {
-        inp  => 'hello {{-  say "X" }} world',
+        inp  => 'hello {{< say "X" }} world',
+        outp => 'helloX world',
+        name => 'trim left',
+    },
+    {
+        inp  => 'hello {{- say "X" }} world',
         outp => 'helloXworld',
         name => 'trim both',
     },
