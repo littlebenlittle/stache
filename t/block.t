@@ -1,26 +1,23 @@
+use v6;
 
 use Stache :Internals;
 use Test;
 
-is Stache::Block.new(
-    body    => 'はじめまして世界さん',
-    trim    => Nil,
-    context => 'raw',
-).render, 'はじめまして世界さん', 'raw context';
+plan 2;
 
-is Stache::Block.new(
-    body    => 'はじめまして',
-    trim    => Nil,
-    context => 'raw',
-    next-block => Stache::Block.new(
-        body    => 'say "世界"',
-        trim    => Nil,
-        context => 'raku',
-        next-block => Stache::Block.new(
-            body    => 'say "さん"',
-            trim    => Nil,
-            context => 'raku',
-        )
-    )
-).render, 'はじめまして世界さん', 'raku context';
+is Stache::Body-Block.new(
+    body     => 'はじめまして世界さん',
+    trim-tag => Stache::trim::none,
+).render, q:to/EOT/, 'render body block';
+print q:to/EOS/.chomp;
+はじめまして世界さん
+EOS
+EOT
+
+is Stache::Tmpl-Block.new(
+    body    => 'print "はじめまして世界さん"',
+    trim-tag => Stache::trim::none,
+).render, "print \"はじめまして世界さん\";\n", 'render tmpl block';
+
+done-testing;
 

@@ -3,20 +3,32 @@ unit package Stache:auth<ben.little@fruition.net>:ver<0.0.0>;
 
 enum trim is export(:Internals) <left right both none>;
 
-class Block is export(:Internals) {
+class Block {
     has Str   $.body is required;
     has trim  $.trim-tag is required;
-    has Bool  $!trim-left  = False;
-    has Bool  $!trim-right = False;
+    has Bool  $.trim-left  is rw = False;
+    has Bool  $.trim-right is rw = False;
     has $.next-block;
+    method set-trim-left  { $.trim-left  = True }
+    method set-trim-right { $.trim-right = True }
+    method render(-->Str:D) {...}
+}
+
+class Body-Block is Block is export(:Internals) {
     method render(-->Str:D) {
-        my $doc = self.body;
-        $doc .= subst(/^<ws>/,'') if $!trim-left;
-        $doc .= subst(/<ws>$/,'') if $!trim-right;
-        return $doc;
+        my $body = self.body;
+        $body .= subst(/^<ws>/,'') if self.trim-left;
+        $body .= subst(/<ws>$/,'') if self.trim-right;
+        return qq:to/EOF/;
+        print q:to/EOS/.chomp;
+        $body
+        EOS
+        EOF
     }
-    method set-trim-left  { $!trim-left  = True }
-    method set-trim-right { $!trim-right = True }
+}
+
+class Tmpl-Block is Block is export(:Internals) {
+    method render(-->Str:D) { return self.body.trim ~ ";\n" ; }
 }
 
 grammar Grammar is export(:Internals) {
@@ -28,13 +40,15 @@ grammar Grammar is export(:Internals) {
     class Actions {
         method TOP($/) {
             my $block;
+            our $*state = {};
             $block = $/<body>.made   if $/<body>.defined;
             $block = $/<stache>.made if $/<stache>.defined;
             my @blocks = ();
             my $*prev-block;
             my $next-block-should-be-trimmed = False;
+            my $this-block-should-be-trimmed = False;
             while $block.defined {
-                $block.set-trim-left if $next-block-should-be-trimmed;
+                $block.set-trim-left if $this-block-should-be-trimmed;
                 if $block.trim-tag ∈ (right,both) {
                     $next-block-should-be-trimmed = True;
                 }
@@ -42,24 +56,24 @@ grammar Grammar is export(:Internals) {
                     $*prev-block.set-trim-right;
                 }
                 @blocks.push($block);
-                $*prev-block = $block;
-                $block .= next-block;
+                NEXT {
+                    $*prev-block = $block;
+                    $block .= next-block;
+                    $this-block-should-be-trimmed = $next-block-should-be-trimmed;
+                }
             }
-            my $doc ~= .render for @blocks;
-            make $doc;
+            make @blocks».render.join;
         }
         method body($/) {
-            make Block.new(
+            make Body-Block.new(
                 body       => $/<text>.Str,
                 trim-tag   => none,
                 next-block => $/<stache>.made,
             );
         }
         method stache($/) {
-            my $cmd  = « $*EXECUTABLE -e "'{$/<text>}'" »;
-            my $proc = shell $cmd, :out;
-            my $block = Block.new(
-                body     => $proc.out.slurp(:close).chomp,
+            my $block = Tmpl-Block.new(
+                body     => $/<text>.Str,
                 trim-tag =>
                     $/<trim-tag>.defined ?? {
                         '<' => left,
@@ -82,6 +96,11 @@ sub MAIN(
     :$debug = False,
 ) is export(:MAIN) {
     CATCH { fail "Could not render template: $!" }
-    say Grammar.parse($file.slurp.trim).made;
+    try say render-template: $file.slurp.trim;
+}
+
+sub render-template(Str:D $template) is export(:Internals) {
+    my $script = Grammar.parse($template).made;
+    return .out.slurp(:close).chomp given shell "$*EXECUTABLE -e '$script'", :out;
 }
 

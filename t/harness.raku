@@ -1,54 +1,30 @@
-use v6;
 
-use Stache :Internals;
 use Test;
 
-my @tests = [
-    {
-        inp  => 'other-test',
-        outp => 'other-test',
-        name => 'parse raw template',
-    },
-    {
-        inp  => '{{ say "test"  }}',
-        outp => 'test',
-        name => 'parse lone raku template',
-    },
-    {
-        inp  => 'another-{{ say "test"  }}',
-        outp => 'another-test',
-        name => 'parse mixed raku template',
-    },
-    {
-        inp  => 'hello {{ # nil }} world',
-        outp => 'hello  world',
-        name => 'trim none',
-    },
-    {
-        inp  => 'hello {{> say "X" }} world',
-        outp => 'hello Xworld',
-        name => 'trim right',
-    },
-    {
-        inp  => 'hello {{< say "X" }} world',
-        outp => 'helloX world',
-        name => 'trim left',
-    },
-    {
-        inp  => 'hello {{- say "X" }} world',
-        outp => 'helloXworld',
-        name => 'trim both',
-    },
-];
+my @skip = ();
 
-plan @tests.elems;
-is Stache::Grammar.parse($_<inp>).made, $_<outp>, $_<name> for @tests;
+sub MAIN(IO() :$I) {
+    CATCH { fail "Test harness failed to execute: $!" }
+    my @t-files = $?FILE.IO.dirname.IO.dir.list.grep: * ~~ /'.t'$/;
+    my @flag-strings = ();
+    @flag-strings.push("-I $I") if $I;
+    my $results = {};
+    race for @t-files -> $filename {
+        next if $filename ~~ /$_ /for @skip;
+        $results{$filename} =
+            run « $*EXECUTABLE @flag-strings[] $filename », :out, :err;
+    }
+    my $exitcode = 0;
+    my $out = '';
+    my $err = '';
+    for @t-files.sort -> $filename {
+        my $proc = $results{$filename};
+        $exitcode = 1 if $proc.exitcode != 0;
+        $out ~= $proc.out.slurp(:close);
+        $err ~= $proc.err.slurp(:close);
+    }
+    say  $out;
+    note $err;
+    exit $exitcode;
+}
 
-q:to/EOF/,
-{{
-    use-context { name => 'ben', jobid => 123 }
-}}
-name: {{ .name }}
-jobid: {{ .jobid }}
-{{ close-context $values }}
-EOF
