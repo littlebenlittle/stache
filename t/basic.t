@@ -39,6 +39,24 @@ my @tests = [
         outp => 'helloXworld',
         name => 'trim both',
     },
+    {
+        inp  => q:to/EOF/,
+        {{>
+        my $values = %( name => 'ben', jobid => 123 );
+        my $things = ('here', 'they', 'are');
+        }}
+
+        name: {{ print $values.name }}
+        jobid: {{ print $values.jobid }}
+        things: {{ print $things }}
+        EOF
+        outp => q:to/EOF/,
+        name: ben
+        jobid: 123
+        things: here they are
+        EOF
+        name => 'test setting and using values',
+    },
 ];
 
 plan @tests.elems;
@@ -46,11 +64,3 @@ is render-template($_<inp>), $_<outp>, $_<name> for @tests;
 
 done-testing;
 
-q:to/EOF/,
-{{
-    use-context { name => 'ben', jobid => 123 }
-}}
-name: {{ .name }}
-jobid: {{ .jobid }}
-{{ close-context $values }}
-EOF

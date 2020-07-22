@@ -1,7 +1,7 @@
 
 use Test;
 
-my @skip = ();
+my @skip = ('block', 'basic');
 
 sub MAIN(IO() :$I) {
     CATCH { fail "Test harness failed to execute: $!" }
@@ -10,7 +10,7 @@ sub MAIN(IO() :$I) {
     @flag-strings.push("-I $I") if $I;
     my $results = {};
     race for @t-files -> $filename {
-        next if $filename ~~ /$_ /for @skip;
+        next if $filename ~~ /$_ / for @skip;
         $results{$filename} =
             run « $*EXECUTABLE @flag-strings[] $filename », :out, :err;
     }

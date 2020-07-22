@@ -16,6 +16,7 @@ class Block {
 
 class Body-Block is Block is export(:Internals) {
     method render(-->Str:D) {
+        return '' if self.body ~~ / ^\s*$ /;
         my $body = self.body;
         $body .= subst(/^<ws>/,'') if self.trim-left;
         $body .= subst(/<ws>$/,'') if self.trim-right;
@@ -28,11 +29,11 @@ class Body-Block is Block is export(:Internals) {
 }
 
 class Tmpl-Block is Block is export(:Internals) {
-    method render(-->Str:D) { return self.body.trim ~ ";\n" ; }
+    method render(-->Str:D) { return self.body.trim ~ "\n" ; }
 }
 
 grammar Grammar is export(:Internals) {
-    token TOP    { <body> | <stache> }
+    token TOP    { <body> | <stache> || $<unknown>=(.*) }
     token body   { <text> <stache>? }
     token stache { '{{' <trim-tag>? <text> '}}' <body>?  }
     token text     { <-[{}]>* }
@@ -92,15 +93,26 @@ grammar Grammar is export(:Internals) {
 }
 
 sub MAIN(
-    IO() $file,
+    IO() $file, #| the template to render
+    :$I,        #| include path
     :$debug = False,
 ) is export(:MAIN) {
-    CATCH { fail "Could not render template: $!" }
-    try say render-template: $file.slurp.trim;
+    say render-template($file.slurp.trim, :I($I));
 }
 
-sub render-template(Str:D $template) is export(:Internals) {
+sub render-template(Str:D $template, :$I) is export(:Internals) {
+    my IO::Path $fh;
+    ENTER {
+        my $id = sprintf '%d%d%d%d', (0..9).pick: 4;
+        $fh = $*TMPDIR.add("stache-$id").IO;
+    }
+    LEAVE { $fh.unlink if $fh.defined; }
     my $script = Grammar.parse($template).made;
-    return .out.slurp(:close).chomp given shell "$*EXECUTABLE -e '$script'", :out;
+    fail "could not parse template" unless $script;
+    my @flag-strings = ();
+    $fh.spurt($script);
+    @flag-strings.push("-I $I") if $I;
+    my $proc = run « $*EXECUTABLE @flag-strings[] $fh », :out, :err;
+    return $proc.out.slurp(:close).chomp;
 }
 
