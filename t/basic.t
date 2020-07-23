@@ -10,32 +10,32 @@ my @tests = [
         name => 'parse raw template',
     },
     {
-        inp  => '{{ print "test"  }}',
+        inp  => '{{ print "test";  }}',
         outp => 'test',
         name => 'parse lone raku template',
     },
     {
-        inp  => 'another-{{ print "test"  }}',
+        inp  => 'another-{{ print "test";  }}',
         outp => 'another-test',
         name => 'parse mixed raku template',
     },
     {
-        inp  => 'hello {{ # nil }} world',
-        outp => 'hello  world',
+        inp  => 'hello {{ print "X"; }} world',
+        outp => 'hello X world',
         name => 'trim none',
     },
     {
-        inp  => 'hello {{> print "X" }} world',
+        inp  => 'hello {{> print "X"; }} world',
         outp => 'hello Xworld',
         name => 'trim right',
     },
     {
-        inp  => 'hello {{< print "X" }} world',
+        inp  => 'hello {{< print "X"; }} world',
         outp => 'helloX world',
         name => 'trim left',
     },
     {
-        inp  => 'hello {{- print "X" }} world',
+        inp  => 'hello {{- print "X"; }} world',
         outp => 'helloXworld',
         name => 'trim both',
     },
@@ -43,17 +43,17 @@ my @tests = [
         inp  => q:to/EOF/,
         {{>
         my $values = %( name => 'ben', jobid => 123 );
-        my $things = ('here', 'they', 'are');
+        my $thing = 'here it is';
         }}
 
-        name: {{ print $values.name }}
-        jobid: {{ print $values.jobid }}
-        things: {{ print $things }}
+        name: {{ say $values<name>; }}
+        jobid: {{ say $values<jobid>; }}
+        things: {{ say $thing; }}
         EOF
-        outp => q:to/EOF/,
+        outp => q:to/EOF/.chomp,
         name: ben
         jobid: 123
-        things: here they are
+        things: here it is
         EOF
         name => 'test setting and using values',
     },

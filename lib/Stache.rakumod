@@ -4,8 +4,8 @@ unit package Stache:auth<ben.little@fruition.net>:ver<0.0.0>;
 enum trim is export(:Internals) <left right both none>;
 
 class Block {
-    has Str   $.body is required;
-    has trim  $.trim-tag is required;
+    has Str   $.text is required;
+    has trim  $.trim-tag = none;
     has Bool  $.trim-left  is rw = False;
     has Bool  $.trim-right is rw = False;
     has $.next-block;
@@ -14,22 +14,22 @@ class Block {
     method render(-->Str:D) {...}
 }
 
-class Body-Block is Block is export(:Internals) {
+class Text-Block is Block is export(:Internals) {
     method render(-->Str:D) {
-        return '' if self.body ~~ / ^\s*$ /;
-        my $body = self.body;
-        $body .= subst(/^<ws>/,'') if self.trim-left;
-        $body .= subst(/<ws>$/,'') if self.trim-right;
+        return '' if self.text ~~ / ^<ws>$ /;
+        my $text = self.text;
+        $text .= subst(/^<ws>/,'') if self.trim-left;
+        $text .= subst(/<ws>$/,'') if self.trim-right;
         return qq:to/EOF/;
         print q:to/EOS/.chomp;
-        $body
+        $text
         EOS
         EOF
     }
 }
 
 class Tmpl-Block is Block is export(:Internals) {
-    method render(-->Str:D) { return self.body.trim ~ "\n" ; }
+    method render(-->Str:D) { return self.text.trim }
 }
 
 grammar Grammar is export(:Internals) {
@@ -66,15 +66,15 @@ grammar Grammar is export(:Internals) {
             make @blocks».render.join;
         }
         method body($/) {
-            make Body-Block.new(
-                body       => $/<text>.Str,
+            make Text-Block.new(
+                text       => $/<text>.Str,
                 trim-tag   => none,
                 next-block => $/<stache>.made,
             );
         }
         method stache($/) {
             my $block = Tmpl-Block.new(
-                body     => $/<text>.Str,
+                text     => $/<text>.Str,
                 trim-tag =>
                     $/<trim-tag>.defined ?? {
                         '<' => left,
@@ -113,6 +113,8 @@ sub render-template(Str:D $template, :$I) is export(:Internals) {
     $fh.spurt($script);
     @flag-strings.push("-I $I") if $I;
     my $proc = run « $*EXECUTABLE @flag-strings[] $fh », :out, :err;
-    return $proc.out.slurp(:close).chomp;
+    my $out = $proc.out.slurp(:close).chomp;
+    my $err = $proc.err.slurp(:close).chomp;
+    return $out;
 }
 
