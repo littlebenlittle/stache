@@ -21,7 +21,7 @@ my @tests = [
     {
         inp  => Text-Block.new(
             :text(' はじめまして お世界さん '),
-            :trim-right,
+            :should-trim-right,
         ),
         outp => q:to/EOT/,
             print q:to/EOS/.chomp;
@@ -33,7 +33,7 @@ my @tests = [
     {
         inp  => Text-Block.new(
             :text(' はじめまして お世界さん '),
-            :trim-left,
+            :should-trim-left,
         ),
         outp => q:to/EOT/,
             print q:to/EOS/.chomp;
@@ -45,8 +45,8 @@ my @tests = [
     {
         inp  => Text-Block.new(
             :text(' はじめまして お世界さん '),
-            :trim-right,
-            :trim-left,
+            :should-trim-right,
+            :should-trim-left,
         ),
         outp => q:to/EOT/,
             print q:to/EOS/.chomp;

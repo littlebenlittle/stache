@@ -6,11 +6,9 @@ enum trim is export(:Internals) <left right both none>;
 class Block {
     has Str   $.text is required;
     has trim  $.trim-tag = none;
-    has Bool  $.trim-left  is rw = False;
-    has Bool  $.trim-right is rw = False;
+    has Bool  $.should-trim-left  is rw = False;
+    has Bool  $.should-trim-right is rw = False;
     has $.next-block;
-    method set-trim-left  { $.trim-left  = True }
-    method set-trim-right { $.trim-right = True }
     method render(-->Str:D) {...}
 }
 
@@ -18,8 +16,8 @@ class Text-Block is Block is export(:Internals) {
     method render(-->Str:D) {
         return '' if self.text ~~ / ^<ws>$ /;
         my $text = self.text;
-        $text .= subst(/^<ws>/,'') if self.trim-left;
-        $text .= subst(/<ws>$/,'') if self.trim-right;
+        $text .= subst(/^<ws>/,'') if self.should-trim-left;
+        $text .= subst(/<ws>$/,'') if self.should-trim-right;
         return qq:to/EOF/;
         print q:to/EOS/.chomp;
         $text
@@ -33,11 +31,17 @@ class Tmpl-Block is Block is export(:Internals) {
 }
 
 grammar Grammar is export(:Internals) {
+    our token trim-tag { <+[<>-]> }
+    our token text {
+        [
+        | <-[{}]>
+        | '}' <!before '}'>
+        | '{' <!after  '{'>
+        ]*
+    }
     token TOP    { <body> | <stache> || $<unknown>=(.*) }
-    token body   { <text> <stache>? }
     token stache { '{{' <trim-tag>? <text> '}}' <body>?  }
-    token text     { <-[{}]>* }
-    token trim-tag { <+[<>-]> }
+    token body   { <text> <stache>? }
     class Actions {
         method TOP($/) {
             my $block;
@@ -49,12 +53,12 @@ grammar Grammar is export(:Internals) {
             my $next-block-should-be-trimmed = False;
             my $this-block-should-be-trimmed = False;
             while $block.defined {
-                $block.set-trim-left if $this-block-should-be-trimmed;
+                $block.should-trim-left = True if $this-block-should-be-trimmed;
                 if $block.trim-tag ∈ (right,both) {
                     $next-block-should-be-trimmed = True;
                 }
                 if $*prev-block.defined and $block.trim-tag ∈ (left,both) {
-                    $*prev-block.set-trim-right;
+                    $*prev-block.should-trim-right = True;
                 }
                 @blocks.push($block);
                 NEXT {
@@ -93,22 +97,27 @@ grammar Grammar is export(:Internals) {
 }
 
 sub MAIN(
-    IO() $file, #| the template to render
+    IO() $file, #| path to the template to render
     :$I,        #| include path
     :$debug = False,
 ) is export(:MAIN) {
     say render-template($file.slurp.trim, :I($I));
 }
 
-sub render-template(Str:D $template, :$I) is export(:Internals) {
+sub render-template(
+    Str:D $tmpl,       #| the template to render
+    Bool :$to-script,  #| return the script rather than the document
+    :$I,               #| include path
+) is export(:Internals) {
     my IO::Path $fh;
     ENTER {
         my $id = sprintf '%d%d%d%d', (0..9).pick: 4;
         $fh = $*TMPDIR.add("stache-$id").IO;
     }
     LEAVE { $fh.unlink if $fh.defined; }
-    my $script = Grammar.parse($template).made;
+    my $script = Grammar.parse($tmpl).made;
     fail "could not parse template" unless $script;
+    return $script if $to-script;
     my @flag-strings = ();
     $fh.spurt($script);
     @flag-strings.push("-I $I") if $I;
