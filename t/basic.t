@@ -72,6 +72,5 @@ try {
     CATCH { .note; .resume; }
 } for @tests;
 
-
 done-testing;
 

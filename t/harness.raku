@@ -17,6 +17,7 @@ sub MAIN(IO() :$I) {
     for @t-files.sort -> $filename {
         my $proc = $results{$filename};
         $exitcode = 1 if $proc.exitcode != 0;
+        $out ~= "# {$filename}\n";
         $out ~= $proc.out.slurp(:close);
         $err ~= $proc.err.slurp(:close);
     }
