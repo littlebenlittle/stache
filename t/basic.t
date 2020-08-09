@@ -3,43 +3,42 @@ use v6;
 use Stache :Internals;
 use Test;
 
+class Unit {
+    has Str $.inp;
+    has Str $.outp;
+    has Str $.name;
+}
+
 my @tests = [
-    {
+    Unit.new(
         inp  => 'this is a test',
         outp => 'this is a test',
-        name => 'parse raw template',
-    },
-    {
+    ),
+    Unit.new(
         inp  => '{{ print "test";  }}',
         outp => 'test',
-        name => 'parse lone raku template',
-    },
-    {
+    ),
+    Unit.new(
         inp  => 'another-{{ print "test";  }}',
         outp => 'another-test',
-        name => 'parse mixed raku template',
-    },
-    {
+    ),
+    Unit.new(
         inp  => 'hello {{ print "X"; }} world',
         outp => 'hello X world',
-        name => 'trim none',
-    },
-    {
+    ),
+    Unit.new(
         inp  => 'hello {{> print "X"; }} world',
         outp => 'hello Xworld',
-        name => 'trim right',
-    },
-    {
+    ),
+    Unit.new(
         inp  => 'hello {{< print "X"; }} world',
         outp => 'helloX world',
-        name => 'trim left',
-    },
-    {
+    ),
+    Unit.new(
         inp  => 'hello {{- print "X"; }} world',
         outp => 'helloXworld',
-        name => 'trim both',
-    },
-    {
+    ),
+    Unit.new(
         inp  => q:to/EOF/,
         {{>
         my $values = %( name => 'ben', jobid => 123 );
@@ -55,12 +54,24 @@ my @tests = [
         jobid: 123
         things: here it is
         EOF
-        name => 'test setting and using values',
-    },
+        name => 'setting and using values',
+    ),
+    Unit.new(
+        inp  => q:to/EOF/,
+        a template {{ say 'with { }'; }}
+        EOF
+        outp => q:to/EOF/.chomp,
+        a template with { }
+        EOF
+    ),
 ];
 
 plan @tests.elems;
-is render-template($_<inp>), $_<outp>, $_<name> for @tests;
+try {
+    is render-template(.inp), .outp, .name // .inp.chomp.lines.first;
+    CATCH { .note; .resume; }
+} for @tests;
+
 
 done-testing;
 

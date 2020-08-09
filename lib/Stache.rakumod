@@ -35,17 +35,18 @@ grammar Grammar is export(:Internals) {
     our token text {
         [
         | <-[{}]>
+        | '}' <!after  '}'>
+        | '{' <!before '{'>
         | '}' <!before '}'>
         | '{' <!after  '{'>
-        ]*
+        ]+
     }
-    token TOP    { <body> | <stache> || $<unknown>=(.*) }
+    token TOP    { <stache> || <body> || $<unknown>=(.*) }
     token stache { '{{' <trim-tag>? <text> '}}' <body>?  }
     token body   { <text> <stache>? }
     class Actions {
         method TOP($/) {
             my $block;
-            our $*state = {};
             $block = $/<body>.made   if $/<body>.defined;
             $block = $/<stache>.made if $/<stache>.defined;
             my @blocks = ();
@@ -77,7 +78,7 @@ grammar Grammar is export(:Internals) {
             );
         }
         method stache($/) {
-            my $block = Tmpl-Block.new(
+            make Tmpl-Block.new(
                 text     => $/<text>.Str,
                 trim-tag =>
                     $/<trim-tag>.defined ?? {
@@ -87,7 +88,6 @@ grammar Grammar is export(:Internals) {
                     }{$/<trim-tag>} !! none,
                 next-block => $/<body>.made,
             );
-            make $block;
         }
     }
     method parse($target, Mu :$actions = Actions, |c) {
@@ -111,15 +111,18 @@ sub render-template(
 ) is export(:Internals) {
     my IO::Path $fh;
     ENTER {
-        my $id = sprintf '%d%d%d%d', (0..9).pick: 4;
-        $fh = $*TMPDIR.add("stache-$id").IO;
+        unless $to-script {
+            my $id = sprintf '%d%d%d%d', (0..9).pick: 4;
+            $fh = $*TMPDIR.add("stache-$id").IO;
+        }
     }
     LEAVE { $fh.unlink if $fh.defined; }
-    my $script = Grammar.parse($tmpl).made;
-    fail "could not parse template" unless $script;
+    my $match = Grammar.parse($tmpl);
+    fail "could not parse template" unless $match;
+    my $script = $match.made;
     return $script if $to-script;
-    my @flag-strings = ();
     $fh.spurt($script);
+    my @flag-strings = ();
     @flag-strings.push("-I $I") if $I;
     my $proc = run « $*EXECUTABLE @flag-strings[] $fh », :out, :err;
     my $out = $proc.out.slurp(:close).chomp;
