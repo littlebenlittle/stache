@@ -13,19 +13,19 @@ class Unit {
 my @units = [
 	Unit.new(
 		tmpl => q:to/EOS/,
-			class {{ class-name }} {
+			class {{ className }} {
 				has {{ type }} $.head;
-				has {{ class-name }} $.tail;
+				has {{ className }} $.tail;
 				submethod BUILD(:$!head, :$!tail) {}
 				method empty { self.bless }
-				method append($head, {{ class-name }} $tail) {
+				method append($head, {{ className }} $tail) {
 					self.bless(head => $head, tail => $tail)
 				}
 			}
 			EOS
 		args => {
 			type       => 'Nat',
-			class-name => 'List-of-Nat',
+			className => 'List-of-Nat',
 		},
 		expects => q:to/EOS/,
 			class List-of-Nat {
@@ -44,19 +44,23 @@ my @units = [
 
 plan @units.elems;
 
-grammar Interpolation {
-    token TOP { .+ }
-    class Actions { method TOP($/) { make 'bingo!' } }
-    method parse($target, Mu :$actions = Actions, |c) {
-		say c<args>;
-        callwith($target, :actions($actions), |c);
-    }
-}
-
 my &render = new-stache(
-	text   => -> $raw, %args { $raw },
-	interp => -> $raw, %args {
-		Interpolation.parse($raw, args => %args).made
+	text   => -> $raw, |c { $raw },
+	interp => -> $raw, |c {
+		grammar Interpolation {
+			token TOP { [ <alnum> || <+[-_]> ]+ }
+			class Actions {
+				method TOP($/) {
+					make 'bingo!'
+				}
+			}
+			method parse($target, Mu :$actions = Actions, |c) {
+				callwith($target, :actions($actions));
+			}
+		}
+		my $outp = Interpolation.parse($raw.trim, |c).made;
+		die "couldn't parse «$raw»" unless $outp;
+		$outp;
 	},
 );
 is &render(.tmpl, args => .args), .expects, .name for @units;

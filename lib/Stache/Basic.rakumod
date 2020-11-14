@@ -42,8 +42,9 @@ sub new-stache(:&text, :&interp) is export {
 		grammar G is Stache {
 			class Actions is Stache::Actions {
 				method body($/) {
+					my $raw = $/<text>.Str;
 					make Chunk.new(
-						text       => &text($/<text>.Str, %args),
+						text       => &text($raw, %args),
 						next-chunk => $/<stache>.made,
 					);
 				}
