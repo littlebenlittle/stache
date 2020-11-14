@@ -1,76 +1,65 @@
 use v6;
 
-use Stache :Internals;
 use Test;
+use Stache::Basic;
 
 class Unit {
-    has Str $.inp;
-    has Str $.outp;
-    has Str $.name;
+	has $.tmpl;
+	has $.expects;
+	has $.args;
+	has $.name;
 }
 
-my @tests = [
-    Unit.new(
-        inp  => 'this is a test',
-        outp => 'this is a test',
-    ),
-    Unit.new(
-        inp  => '{{ print "test";  }}',
-        outp => 'test',
-    ),
-    Unit.new(
-        inp  => 'another-{{ print "test";  }}',
-        outp => 'another-test',
-    ),
-    Unit.new(
-        inp  => 'hello {{ print "X"; }} world',
-        outp => 'hello X world',
-    ),
-    Unit.new(
-        inp  => 'hello {{> print "X"; }} world',
-        outp => 'hello Xworld',
-    ),
-    Unit.new(
-        inp  => 'hello {{< print "X"; }} world',
-        outp => 'helloX world',
-    ),
-    Unit.new(
-        inp  => 'hello {{- print "X"; }} world',
-        outp => 'helloXworld',
-    ),
-    Unit.new(
-        inp  => q:to/EOF/,
-        {{>
-        my $values = %( name => 'ben', jobid => 123 );
-        my $thing = 'here it is';
-        }}
-
-        name: {{ say $values<name>; }}
-        jobid: {{ say $values<jobid>; }}
-        things: {{ say $thing; }}
-        EOF
-        outp => q:to/EOF/.chomp,
-        name: ben
-        jobid: 123
-        things: here it is
-        EOF
-        name => 'setting and using values',
-    ),
-    Unit.new(
-        inp  => q:to/EOF/,
-        a template {{ say 'with { }'; }}
-        EOF
-        outp => q:to/EOF/.chomp,
-        a template with { }
-        EOF
-    ),
+my @units = [
+	Unit.new(
+		tmpl => q:to/EOS/,
+			class {{ class-name }} {
+				has {{ type }} $.head;
+				has {{ class-name }} $.tail;
+				submethod BUILD(:$!head, :$!tail) {}
+				method empty { self.bless }
+				method append($head, {{ class-name }} $tail) {
+					self.bless(head => $head, tail => $tail)
+				}
+			}
+			EOS
+		args => {
+			type       => 'Nat',
+			class-name => 'List-of-Nat',
+		},
+		expects => q:to/EOS/,
+			class List-of-Nat {
+				has Nat $.head;
+				has List-of-Nat $.tail;
+				submethod BUILD(:$!head, :$!tail) {}
+				method empty { self.bless }
+				method append($head, List-of-Nat $tail) {
+					self.bless(head => $head, tail => $tail)
+				}
+			}
+			EOS
+		name => 'list class template',
+	),
 ];
 
-plan @tests.elems;
-try {
-    is render-template(.inp), .outp, .name // .inp.chomp.lines.first;
-    CATCH { .note; .resume; }
-} for @tests;
+plan @units.elems;
+
+grammar Interpolation {
+    token TOP { .+ }
+    class Actions { method TOP($/) { make 'bingo!' } }
+    method parse($target, Mu :$actions = Actions, |c) {
+		say c<args>;
+        callwith($target, :actions($actions), |c);
+    }
+}
+
+my &render = new-stache(
+	text   => -> $raw, %args { $raw },
+	interp => -> $raw, %args {
+		Interpolation.parse($raw, args => %args).made
+	},
+);
+is &render(.tmpl, args => .args), .expects, .name for @units;
 
 done-testing;
 
