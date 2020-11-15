@@ -14,6 +14,6 @@
   "license": "Artistic-2.0",
   "provides": {
     "Stache": "lib/Stache.rakumod",
-    "Stache::Basic": "lib/Stache/Basic.rakumod"
+    "Stache::Base": "lib/Stache/Base.rakumod"
   }
 }
