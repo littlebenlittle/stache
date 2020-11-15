@@ -1,7 +1,7 @@
 use v6;
 
 use Test;
-use Stache::Basic;
+use Stache::Base;
 
 class Unit {
     has $.tmpl;
@@ -44,7 +44,7 @@ my @units = [
 
 plan @units.elems;
 
-my &render = new-stache(
+my &render = new-renderer(
     text   => -> $raw, |c { $raw },
     interp => -> $raw, |c {
         grammar Interpolation {
@@ -62,11 +62,11 @@ my &render = new-stache(
                     make "ERROR: {$s}" if not $found;
                 }
             }
-            method parse($target, Mu :$actions = Actions, |c) {
+            method parse($target, Mu :$actions = Actions) {
                 callwith($target, :actions($actions));
             }
         }
-        my $outp = Interpolation.parse($raw.trim, |c).made;
+        my $outp = Interpolation.parse($raw.trim).made;
         die "couldn't parse «$raw»" unless $outp;
         $outp;
     },

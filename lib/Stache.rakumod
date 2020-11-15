@@ -1,5 +1,7 @@
 
-unit package Stache:auth<ben.little@fruition.net>:ver<0.0.0>;
+unit package Stache:auth<github:littlebenlittle>:ver<0.1.0>;
+
+use Stache::Base;
 
 enum trim is export(:Internals) <left right both none>;
 
@@ -30,21 +32,8 @@ class Tmpl-Block is Block is export(:Internals) {
     method render(-->Str:D) { return self.text.trim }
 }
 
-grammar Grammar is export(:Internals) {
-    our token trim-tag { <+[<>-]> }
-    our token text {
-        [
-        | <-[{}]>
-        | '}' <!after  '}'>
-        | '{' <!before '{'>
-        | '}' <!before '}'>
-        | '{' <!after  '{'>
-        ]+
-    }
-    token TOP    { <stache> || <body> || $<unknown>=(.*) }
-    token stache { '{{' <trim-tag>? <text> '}}' <body>?  }
-    token body   { <text> <stache>? }
-    class Actions {
+grammar Grammar is Stache::Base::Grammar is export(:Internals) {
+	class Actions is Stache::Base::Grammar::Actions {
         method TOP($/) {
             my $block;
             $block = $/<body>.made   if $/<body>.defined;
@@ -68,7 +57,7 @@ grammar Grammar is export(:Internals) {
                     $this-block-should-be-trimmed = $next-block-should-be-trimmed;
                 }
             }
-            make @blocks».render.join;
+            make @blocks».render.join: "\n";
         }
         method body($/) {
             make Text-Block.new(
@@ -78,14 +67,30 @@ grammar Grammar is export(:Internals) {
             );
         }
         method stache($/) {
+			my $raw = $/<text>.Str;
+            grammar Interpolation {
+                token TOP { <trim-tag>? <text> }
+				token text { .* }
+                token trim-tag { <+[<>-]> }
+                class Actions {
+					method TOP($/) {
+						given $/<trim-tag> {
+							when '<' { make (left,  $/<text>.Str) }
+							when '>' { make (right, $/<text>.Str) }
+							when '-' { make (both,  $/<text>.Str) }
+							default  { make (none,  $/<text>.Str) }
+						}
+					}
+				}
+                method parse($target, Mu :$actions = Actions) {
+                    callwith($target, :actions($actions));
+                }
+            }
+            my ($trim-tag, $outp) = Interpolation.parse($raw.trim).made;
+            die "couldn't parse «$raw»" unless $outp;
             make Tmpl-Block.new(
-                text     => $/<text>.Str,
-                trim-tag =>
-                    $/<trim-tag>.defined ?? {
-                        '<' => left,
-                        '>' => right,
-                        '-' => both,
-                    }{$/<trim-tag>} !! none,
+                text       => $outp,
+                trim-tag   => $trim-tag,
                 next-block => $/<body>.made,
             );
         }
@@ -97,18 +102,19 @@ grammar Grammar is export(:Internals) {
 }
 
 sub MAIN(
-    IO() $file, #| path to the template to render
-    :$I,        #| include path
-    :$debug = False,
+    IO() $file,       #| path to the template to render
+    :$I,              #| include path
+    :$script = False, #| render the script rather than executing it
 ) is export(:MAIN) {
-    say render-template($file.slurp.trim, :I($I));
+    say render-template($file.slurp.trim, :I($I), :to-script($script));
 }
 
 sub render-template(
     Str:D $tmpl,       #| the template to render
-    Bool :$to-script,  #| return the script rather than the document
-    :$I,               #| include path
-) is export(:Internals) {
+    Any  :$topic,      #| object passed as topic to the template
+    Str  :$I,          #| include path
+    Bool :$to-script,  #| render the script rather than executing it
+) is export(:Internals, :render-template) {
     my IO::Path $fh;
     ENTER {
         unless $to-script {
@@ -117,8 +123,8 @@ sub render-template(
         }
     }
     LEAVE { $fh.unlink if $fh.defined; }
-    my $match = Grammar.parse($tmpl);
-    fail "could not parse template" unless $match;
+	my $match = Grammar.parse($tmpl);
+	die "could not parse template" unless $match;
     my $script = $match.made;
     return $script if $to-script;
     $fh.spurt($script);
@@ -127,6 +133,7 @@ sub render-template(
     my $proc = run « $*EXECUTABLE @flag-strings[] $fh », :out, :err;
     my $out = $proc.out.slurp(:close).chomp;
     my $err = $proc.err.slurp(:close).chomp;
+    fail $err if $proc.exitcode != 0;
     return $out;
 }
 

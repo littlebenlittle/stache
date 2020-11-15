@@ -1,5 +1,5 @@
 
-unit package Stache::Basic;
+unit package Stache::Base:auth<github:littlebenlittle>:ver<0.1.0>;
 
 class Chunk {
     has Str   $.text is required;
@@ -7,7 +7,7 @@ class Chunk {
     method render(-->Str:D) { $.text }
 }
 
-grammar Stache {
+grammar Grammar {
     our token text {
         [
         | <-[{}]>
@@ -37,10 +37,10 @@ grammar Stache {
     }
 }
 
-sub new-stache(:&text, :&interp) is export {
+sub new-renderer(:&text, :&interp) is export {
     return -> Str:D $raw, |c {
-        grammar G is Stache {
-            class Actions is Stache::Actions {
+        grammar G is Grammar {
+            class Actions is Grammar::Actions {
                 method body($/) {
                     my $raw = $/<text>.Str;
                     make Chunk.new(
