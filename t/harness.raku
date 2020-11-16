@@ -24,8 +24,7 @@ sub MAIN(IO() :$I) {
         }
     }
     for @pass.sort -> $filename {
-        note "# PASS {$filename}\n";
-        note $bufs{$filename};
+        note "# PASS {$filename}";
     }
     for @fail.sort -> $filename {
         note "# FAIL {$filename}\n";
