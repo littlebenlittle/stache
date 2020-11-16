@@ -1,6 +1,6 @@
 use v6;
 
-use Stache :Internals;
+use Stache::App :Internals;
 use Test;
 
 class Unit {

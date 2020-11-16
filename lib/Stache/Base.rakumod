@@ -37,29 +37,3 @@ grammar Grammar {
     }
 }
 
-sub new-renderer(:&text, :&interp) is export {
-    return -> Str:D $raw, |c {
-        grammar G is Grammar {
-            class Actions is Grammar::Actions {
-                method body($/) {
-                    my $raw = $/<text>.Str;
-                    make Chunk.new(
-                        text       => &text($raw, |c),
-                        next-chunk => $/<stache>.made,
-                    );
-                }
-                method stache($/) {
-                    make Chunk.new(
-                        text       => &interp($/<text>.Str, |c),
-                        next-chunk => $/<body>.made,
-                    );
-                }
-            }
-            method parse($target, Mu :$actions = Actions) {
-                callwith($target, :actions($actions));
-            }
-        }
-        G.parse($raw).made;
-    }
-}
-

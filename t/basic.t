@@ -1,13 +1,14 @@
 use v6;
 
 use Test;
-use Stache::Base;
+
+use Stache::Renderer;
 
 class Unit {
     has $.tmpl;
-    has $.expects;
     has $.args;
-    has $.name;
+    has $.expects;
+	has $.name;
 }
 
 my @units = [
@@ -44,34 +45,8 @@ my @units = [
 
 plan @units.elems;
 
-my &render = new-renderer(
-    text   => -> $raw, |c { $raw },
-    interp => -> $raw, |c {
-        grammar Interpolation {
-            token TOP { [ <alnum> || <+[-_]> ]+ }
-            class Actions {
-                method TOP($/) {
-                    my $s = $/.Str;
-                    my $found = False;
-                    for c<args>.keys -> $key {
-                        if $key eq $s {
-                            make c<args>{$key};
-                            $found = True;
-                        }
-                    }
-                    make "ERROR: {$s}" if not $found;
-                }
-            }
-            method parse($target, Mu :$actions = Actions) {
-                callwith($target, :actions($actions));
-            }
-        }
-        my $outp = Interpolation.parse($raw.trim).made;
-        die "couldn't parse «$raw»" unless $outp;
-        $outp;
-    },
-);
-is &render(.tmpl, args => .args), .expects, .name for @units;
+is Stache::Renderer::basic(.tmpl, |.args), .expects, .name for @units;
 
 done-testing;
+
 
