@@ -4,7 +4,8 @@ sub MAIN(IO() :$I) {
     my @flag-strings = ();
     @flag-strings.push("-I $I") if $I;
     my $bufs = {};
-    my $exitcode = 0;
+    my @pass = ();
+    my @fail = ();
     race for @t-files -> $filename {
         my @cmd = « $*EXECUTABLE @flag-strings[] $filename »;
         my $proc = Proc::Async.new: @cmd, :out, :err;
@@ -16,16 +17,22 @@ sub MAIN(IO() :$I) {
             whenever $proc.stderr.lines { $buf ~= "ERR: $_\n" }
             whenever $signals { $proc.kill: $_ }
             whenever $proc.start {
-                $exitcode = 1 if .exitcode != 0;
+                @pass.push: $filename if .exitcode == 0;
+                @fail.push: $filename if .exitcode != 0;
                 done
             }
         }
     }
-    for @t-files.sort -> $filename {
-        note "# {$filename}\n";
+    for @pass.sort -> $filename {
+        note "# PASS {$filename}\n";
         note $bufs{$filename};
     }
-    note "### ALL TESTS PASS ###" if $exitcode == 0;
-    exit $exitcode;
+    for @fail.sort -> $filename {
+        note "# FAIL {$filename}\n";
+        note $bufs{$filename};
+    }
+    my $pass = @fail.elems == 0;
+    note "### ALL TESTS PASS ###" if $pass;
+    exit $pass ?? 1 !! 0;
 }
 
