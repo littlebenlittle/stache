@@ -1,4 +1,4 @@
-#!env rakudo
+#!env raku
 
 use Stache :MAIN;
 
