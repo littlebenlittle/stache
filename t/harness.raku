@@ -1,28 +1,37 @@
 
-use Test;
-
 sub MAIN(IO() :$I) {
-    CATCH { fail "Test harness failed to execute: $!" }
     my @t-files = $?FILE.IO.dirname.IO.dir.list.grep: * ~~ /'.t'$/;
     my @flag-strings = ();
     @flag-strings.push("-I $I") if $I;
-    my $results = {};
+    my $bufs = {};
+    my @pass = ();
+    my @fail = ();
     race for @t-files -> $filename {
-        $results{$filename} =
-            run « $*EXECUTABLE @flag-strings[] $filename », :out, :err;
+        my @cmd = « $*EXECUTABLE @flag-strings[] $filename »;
+        my $proc = Proc::Async.new: @cmd, :out, :err;
+        my $buf := $bufs{$filename};
+        $buf = '';
+        my $signals = signal(SIGHUP).merge(signal(SIGINT)).merge(signal(SIGTERM));
+        react {
+            whenever $proc.stdout.lines { $buf ~= "OUT: $_\n" }
+            whenever $proc.stderr.lines { $buf ~= "ERR: $_\n" }
+            whenever $signals { $proc.kill: $_ }
+            whenever $proc.start {
+                @pass.push: $filename if .exitcode == 0;
+                @fail.push: $filename if .exitcode != 0;
+                done
+            }
+        }
     }
-    my $exitcode = 0;
-    my $out = '';
-    my $err = '';
-    for @t-files.sort -> $filename {
-        my $proc = $results{$filename};
-        $exitcode = 1 if $proc.exitcode != 0;
-        $out ~= "# {$filename}\n";
-        $out ~= $proc.out.slurp(:close);
-        $err ~= $proc.err.slurp(:close);
+    for @pass.sort -> $filename {
+        note "# PASS {$filename}";
     }
-    say  $out;
-    note $err;
-    exit $exitcode;
+    for @fail.sort -> $filename {
+        note "# FAIL {$filename}\n";
+        note $bufs{$filename};
+    }
+    my $pass = @fail.elems == 0;
+    note "### ALL TESTS PASS ###" if $pass;
+    exit $pass ?? 1 !! 0;
 }
 

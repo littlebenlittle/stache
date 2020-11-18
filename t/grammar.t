@@ -1,7 +1,7 @@
 use v6;
 
 use Test;
-use Stache :Internals;
+use Stache::Base;
 
 class Unit {
     has Str $.text;
@@ -17,8 +17,8 @@ my @units = [
 plan @units.elems;
 
 for @units {
-    .text ~~ Stache::Grammar::{'&text'};
-    is $/.Str, .text, .name // "'{.text.chomp.lines.first}' ~~ Stache::Grammar::\{'&text'\}";
+    .text ~~ Stache::Base::Grammar::{'&text'};
+    is $/.Str, .text, .name // "'{.text.chomp.lines.first}' ~~ Stache::Base::Grammar::\{'&text'\}";
 }
 
 done-testing;
