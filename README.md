@@ -1,29 +1,22 @@
+# Stache
 
-# Stache ;}
+Stache is an extensible mustache-style templating engine.
 
-Stache is an overly-featured raku template system.
+## Basic Use
 
-## Example
+```text
+use Stache::Renderer;
 
-```yaml
-# template.yaml
-{{-
-my $values = { name => 'ben', jobid => 123 };
-my @things = ('here', 'they', 'are');
-}}
+my $template = q:to/EOT/;
+say '> # This is some {{ lang }} code';
+say '> {{ code }}';
+say {{ code }};
+EOT
 
-name: {{ say $values<name>; }}
-jobid: {{ say $values<jobid>; }}
-things: [{{ print @things.map({"'$_'"}).join(', '); }}]
-```
-
-```bash
-rakudo -I ./lib bin/stache -I=./lib template.yaml
-```
-
-```yaml
-name: ben
-jobid: 123
-things: ['here', 'they', 'are']
+say Stache::Renderer::basic(
+    $template,
+    lang => 'Raku',
+    code => '1 + 1',
+);
 ```
 
