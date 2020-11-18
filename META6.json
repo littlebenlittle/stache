@@ -6,7 +6,7 @@
   "description": "extensible mustache templating",
   "source-url": "github.com/littlebenlittle/stache",
   "perl": "6.d",
-  "author": "Ben Little <ben.little@fruition.net>",
+  "author": "Ben Little <ben.little@benlittle.dev>",
   "tags": [
     "template",
     "mustache"
