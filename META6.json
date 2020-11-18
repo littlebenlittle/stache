@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "auth": "github:littlebenlittle",
   "description": "extensible mustache templating",
-  "source-url": "github.com/littlebenlittle/stache",
+  "source-url": "https://github.com/littlebenlittle/stache.git",
   "perl": "6.d",
   "author": "Ben Little <ben.little@benlittle.dev>",
   "tags": [
