@@ -6,7 +6,7 @@ Stache is an extensible mustache-style templating engine.
 
 Raku script:
 
-```text
+```raku
 use Stache::Renderer;
 
 my $template = q:to/EOT/;

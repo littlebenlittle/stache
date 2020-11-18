@@ -7,7 +7,7 @@ Stache is an extensible mustache-style templating engine.
 
 Raku script:
 
-```text
+```raku
 {{ basic-example }}
 ```
 
