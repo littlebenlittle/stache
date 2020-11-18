@@ -4,6 +4,8 @@ Stache is an extensible mustache-style templating engine.
 
 ## Basic Use
 
+Raku script:
+
 ```text
 use Stache::Renderer;
 
@@ -18,5 +20,13 @@ say Stache::Renderer::basic(
     lang => 'Raku',
     code => '1 + 1',
 );
+```
+
+Output:
+
+```raku
+say '> # This is some Raku code';
+say '> 1 + 1';
+say 1 + 1;
 ```
 
