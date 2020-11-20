@@ -4,28 +4,25 @@ unit package Stache::Renderer:auth<github:littlebenlittle>:ver<0.1.0>;
 use Stache;
 
 our &basic = Stache::new-renderer(
-    text   => -> $raw, |c { $raw },
-    interp => -> $raw, |c {
-        grammar Interpolation {
+    body   => -> $raw, *%args { $raw },
+    stache => -> $raw, *%args {
+        my grammar Interpolation {
             token TOP { [ <alnum> || <+[-_]> ]+ }
-            class Actions {
-                method TOP($/) {
-                    my $s = $/.Str;
-                    my $found = False;
-                    for c.hash.keys -> $key {
-                        if $key eq $s {
-                            make c.hash{$key};
-                            $found = True;
-                        }
+        }
+        my class Actions {
+            method TOP($/) {
+                my $s = $/.Str;
+                my $found = False;
+                for %args.keys -> $key {
+                    if $key eq $s {
+                        make %args{$key};
+                        $found = True;
                     }
-                    make "ERROR: {$s}" if not $found;
                 }
-            }
-            method parse($target, Mu :$actions = Actions) {
-                callwith($target, :actions($actions));
+                make "ERROR: {$s}" if not $found;
             }
         }
-        my $outp = Interpolation.parse($raw.trim).made;
+        my $outp = Interpolation.parse($raw.trim, :actions(Actions)).made;
         die "couldn't parse «$raw»" unless $outp;
         $outp;
     },

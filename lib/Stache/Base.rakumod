@@ -2,9 +2,10 @@
 unit package Stache::Base:auth<github:littlebenlittle>:ver<0.1.0>;
 
 class Chunk {
-    has Str   $.text is required;
-    has Chunk $.next-chunk;
-    method render(-->Str:D) { $.text }
+    has Str   $.render is required;
+    has Chunk $.next;
+    has Chunk $.prev;
+    has %.context;
 }
 
 grammar Grammar {
@@ -22,13 +23,11 @@ grammar Grammar {
     token body   { <text> <stache>? }
     class Actions {
         method TOP($/) {
-            my $chunk;
-            $chunk = $/<body>.made   if $/<body>.defined;
-            $chunk = $/<stache>.made if $/<stache>.defined;
+            my $chunk = ($/<body> // $/<stache>).made;
             my @chunks = ();
             while $chunk.defined {
                 @chunks.push($chunk);
-                NEXT { $chunk .= next-chunk }
+                NEXT { $chunk .= next }
             }
             make @chunks».render.join;
         }

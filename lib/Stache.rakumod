@@ -3,29 +3,23 @@ unit package Stache:auth<github:littlebenlittle>:ver<0.1.0>;
 
 use Stache::Base;
 
-our sub new-renderer(:&text, :&interp) {
-    return -> Str:D $raw, |c {
-        grammar G is Stache::Base::Grammar {
-            class Actions is Stache::Base::Grammar::Actions {
-                method body($/) {
-                    my $raw = $/<text>.Str;
-                    make Stache::Base::Chunk.new(
-                        text       => &text($raw, |c),
-                        next-chunk => $/<stache>.made,
-                    );
-                }
-                method stache($/) {
-                    make Stache::Base::Chunk.new(
-                        text       => &interp($/<text>.Str, |c),
-                        next-chunk => $/<body>.made,
-                    );
-                }
+our sub new-renderer(:&body, :&stache) {
+    return -> Str:D $raw, *%args {
+        class Actions is Stache::Base::Grammar::Actions {
+            method body($/) {
+                make Stache::Base::Chunk.new(
+                    render => &body($/<text>.Str, |%args),
+                    next   => $/<stache>.made,
+                );
             }
-            method parse($target, Mu :$actions = Actions) {
-                callwith($target, :actions($actions));
+            method stache($/) {
+                make Stache::Base::Chunk.new(
+                    render => &stache($/<text>.Str, |%args),
+                    next   => $/<body>.made,
+                );
             }
         }
-        G.parse($raw).made;
+        Stache::Base::Grammar.parse($raw, :actions(Actions)).made;
     }
 }
 
