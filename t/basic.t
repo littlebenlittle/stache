@@ -41,6 +41,18 @@ my @units = [
             EOS
         name => 'list class template',
     ),
+    Unit.new(
+        tmpl => q:to/EOS/,
+            This template has a {{ my-key }}
+                and {{ another-key }} that is not missing
+            EOS
+        args => { another-key => 'another key' },
+        expects => q:to/EOS/,
+            This template has a <! KEY-MISSING: my-key !>
+                and another key that is not missing
+            EOS
+        name => 'list class template',
+    ),
 ];
 
 plan @units.elems;

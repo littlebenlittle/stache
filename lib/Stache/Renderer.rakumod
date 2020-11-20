@@ -7,7 +7,7 @@ our &basic = Stache::new-renderer(
     body   => -> $raw, *%args { $raw },
     stache => -> $raw, *%args {
         my grammar Interpolation {
-            token TOP { [ <alnum> || <+[-_]> ]+ }
+            token TOP { [ <.alpha> | <+[-_\d]> ]+ }
         }
         my class Actions {
             method TOP($/) {
@@ -19,11 +19,11 @@ our &basic = Stache::new-renderer(
                         $found = True;
                     }
                 }
-                make "ERROR: {$s}" if not $found;
+                make "<! KEY-MISSING: {$s} !>" if not $found;
             }
         }
         my $outp = Interpolation.parse($raw.trim, :actions(Actions)).made;
-        die "couldn't parse «$raw»" unless $outp;
+        die "couldn't parse «$raw»" unless $outp.defined;
         $outp;
     },
 );
