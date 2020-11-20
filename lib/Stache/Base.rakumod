@@ -9,7 +9,7 @@ class Chunk {
 }
 
 grammar Grammar {
-    our token text {
+    token text {
         [
         | <-[{}]>
         | '}' <!after  '}'>
@@ -18,9 +18,10 @@ grammar Grammar {
         | '{' <!after  '{'>
         ]+
     }
+    token stache-open  { '{{' }
+    token stache-close { '}}' }
     token TOP    { <stache> || <body> || $<unknown>=(.*) }
-    token stache { '{{' <text> '}}' <body>?  }
-    token body   { <text> <stache>? }
+    token stache { <.stache-open> <text> <.stache-close> }
     class Actions {
         method TOP($/) {
             my $chunk = ($/<body> // $/<stache>).made;
