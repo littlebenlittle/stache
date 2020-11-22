@@ -3,82 +3,97 @@ unit package Stache::TemplateLanguage:auth<github:littlebenlittle>:ver<0.0.0>;
 
 use Stache::Base;
 
-grammar Grammar is Stache::Base::Grammar {
-    token TOP  { <term>+ }
-    token term { <for-block> || [<text> | <stache>] }
-
-    token key        { [ <.alpha> | <+[\d\-_]> ]+ }
-    token nested-key { <key> | <key> '.' <nested-key> }
-
-    token stache {
-        <.stache-open>
-            <.ws> <nested-key>
-            <.ws>
-        <.stache-close>
+grammar Grammar {
+    token TOP { <term>+ }
+    token key {
+        [ <.alpha> | <+[\d\-_]> ]+
     }
-
-    token for-block {
-        <for-open>
-            <.ws> <term>
-            <.ws>
-        <for-close>
+    token trim   { '-' | '<' | '>' | 'x' }
+    token stache-open  { '{{' <trim>? }
+    token stache-close { '}}' }
+    token text {
+        [
+        | <-[{}]>
+        | '}' <!after  '}'>
+        | '{' <!before '{'>
+        | '}' <!before '}'>
+        | '{' <!after  '{'>
+        ]+
     }
-    token for-open   {
-        <.stache-open>
-            <.ws> 'for'
-            <.ws> $<index>=<.key>
-            <.ws> ['in'|'←']
-            <.ws> $<indices>=<.key>
-            <.ws>
-        <.stache-close>
+    token structure-block {
+        || <for-block>
     }
-    token for-close  {
-        <.stache-open>
+    token for-close {
+        <stache-open>
             <.ws> 'endfor'
             <.ws> 
         <.stache-close>
+        $<ws-trailing>=<.ws>
+    }
+    token term {
+        | <basic-block> { make $<basic-block>.made }
+        | <for-block>   { make $<for-block>.made }
+    }
+    token for-block {
+        <for-open>
+            [<term> <!before <for-close>>]*
+            <term>
+        <for-close> {
+            make -> *%ctx -->Str:D {
+                my ($index, $nested-key) = $/<for-open>.made;
+                my @contexts = $nested-key(|%ctx);
+                .say for $/<term>.Str;
+                @contexts.map(-> %ctx {
+                    say %ctx;
+                    $/<term>».made.map(-> &render { &render(|%ctx) }).join
+                }).join
+            }
+        }
+    }
+    token basic-block {
+        | <stache> { make $<stache>.made       }
+        | <text>   { make -> | { $<text>.Str } }
+    }
+    token stache {
+        <stache-open>
+            <.ws> <nested-key>
+            <.ws>
+        <.stache-close> {
+            my Callable:D $render = $<nested-key>.made;
+            make $render;
+        }
+    }
+    token nested-key {
+        | <key> { make -> *%ctx -->Str:D { %ctx{$/<key>} } }
+        | <key> '.' <nested-key> {
+            make -> *%ctx -->Str:D {
+                ($<nested-key>.made)(%ctx{$/<key>})
+            }
+        }
+    }
+    token for-open {
+        <stache-open>
+            <.ws> 'for'
+            <.ws> <key>
+            <.ws> ['in'|'←']
+            <.ws> <nested-key>
+            <.ws>
+        <.stache-close>
+        $<ws-trailing>=<.ws> {
+            my Callable:D $nested-key = $/<nested-key>.made;
+            make ($/<key>.Str, $nested-key)
+        }
     }
 }
 
-our sub render(Str:D $tmpl, *%args) {
-    class Actions is Stache::Base::Grammar::Actions {
+our sub render(Str:D $tmpl, *%ctx) {
+    class Actions {
         method TOP($/) {
-            my @chunks = $/<term>».made;
-            make @chunks.map(-> &f { &f(|%args) }).join
-        }
-        method term($/) {
-            make -> *%ctx {
-                my &fn = ($/<for-block> // $/<text> // $/<stache>).made;
-                &fn(|%ctx);
-            }
-        }
-        method for-block($/) {
-            my %for = $/<for-open>.made;
-            make -> | {
-                %for<indices>.map(-> $val {
-                    ($/<term>.made)(|%(%for<index> => $val))
-                }).join;
-            }
-        }
-        method for-open($/) {
-            make %( index   => $/<index>.Str,
-                    indices => %args{$/<indices>.Str} )
-        }
-        method stache($/) {
-            make -> *%ctx { ($/<nested-key>.made)(|%ctx) }
-        }
-        method nested-key($/) {
-            make -> *%ctx {
-                my $render = ($/<key>.made)(|%ctx);
-                $render ~= ($/<nested-key>.made)(|%ctx) if $/<nested-key>;
-                $render;
-            }
-        }
-        method key($/)  {
-            make -> *%ctx { %ctx{$/.Str} }
-        }
-        method text($/) {
-            make -> | { $/.Str }
+            my Callable:D @terms = $/<term>».made;
+            make @terms.map(-> Callable:D $render -->Str:D {
+                my Str:D $res = $render(|%ctx).Str;
+                $res
+            });
         }
     }
     return Grammar.parse($tmpl, :actions(Actions)).made;
