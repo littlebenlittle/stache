@@ -1,0 +1,29 @@
+
+heroes:
+  - name: Pad
+    class:
+      name: Chef
+      description: the one who cooks
+  - name: Tai
+    class:
+      name: Cook
+      description: the one who ... chefs?
+
+introduction: presenting the wise, the great ...
+
+enemies:
+  - name: watcher
+    weapon: all-seeing eye
+    items:
+      - hammer
+      - desk
+      - lamp
+  - name: potato sack
+    weapon: potato
+    items: []
+  - name: canary
+    weapon: really loud squawk
+    items:
+      - feather
+      - silver dollar
+
