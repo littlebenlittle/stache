@@ -1,0 +1,26 @@
+# Heroes
+
+presenting the wise, the great ...
+Name: Pad
+Class: Chef, the one who cooks
+
+presenting the wise, the great ...
+Name: Tai
+Class: Cook, the one who ... chefs?
+
+# Enemies
+
+watcher wields a all-seeing eye
+Items:
+- hammer
+- desk
+- lamp
+
+potato sack wields a potato
+Items:
+
+canary wields a really loud squawk
+Items:
+- feather
+- silver dollar
+

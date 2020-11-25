@@ -1,0 +1,20 @@
+# Heroes
+
+{{ for heroes }}
+{{ introduction }}
+Name: {{ .name }}
+{{ with .class }}
+Class: {{ .name }}, {{ .description }}
+{{ endwith }}
+
+{{ endfor }}
+# Enemies
+
+{{ for enemies }}
+{{ .name }} wields a {{ .weapon }}
+Items:
+{{ for .items }}
+- {{ . }}
+{{ endfor }}
+
+{{ endfor }}

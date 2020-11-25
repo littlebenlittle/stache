@@ -1,39 +1,28 @@
 
 unit package Stache::Base:auth<github:littlebenlittle>:ver<0.1.0>;
 
-class Chunk {
-    has Str   $.render is required;
-    has Chunk $.next;
-    has Chunk $.prev;
-    has %.context;
-}
-
 grammar Grammar {
+    token TOP { <term>+ }
+    proto token term {*}
+          token term:sym<text>   { <text> }
+          token term:sym<stache> { <stache> }
     token text {
         [
-        | <-[{}]>
-        | '}' <!after  '}'>
+        | <-[{]>
         | '{' <!before '{'>
-        | '}' <!before '}'>
         | '{' <!after  '{'>
         ]+
     }
-    token stache-open  { '{{' }
-    token stache-close { '}}' }
-    token TOP    { <stache> || <body> || $<unknown>=(.*) }
-    token stache { <.stache-open> <text> <.stache-close> }
-    class Actions {
-        method TOP($/) {
-            my $chunk = ($/<body> // $/<stache>).made;
-            my @chunks = ();
-            while $chunk.defined {
-                @chunks.push($chunk);
-                NEXT { $chunk .= next }
-            }
-            make @chunks».render.join;
-        }
-        method body($/)   {...}
-        method stache($/) {...}
+    token variable-name { [ <.alpha> | <+[_\-\d]> ]+ }
+    token trailing-ws   { [\h <?before \n>]* \n?     }
+    token stache {
+        '{{'   <.ws>
+        <key>  <.ws>
+        <op>?  <.ws>
+        '}}' <trailing-ws>
     }
+    proto token key {*}
+          token key:sym<base> { <variable-name> ['.' <key:sym<base>>]? }
+    token op  { '|' <.ws> <variable-name> <op>? }
 }
 

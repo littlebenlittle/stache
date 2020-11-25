@@ -1,25 +1,20 @@
 use v6;
 
 use Test;
-use Stache::Base;
+use META6::Query;
+use YAMLish;
+use Stache;
 
-class Unit {
-    has Str $.text;
-    has Str $.name;
-}
+my $root-dir = META6::Query::root-dir $?FILE;
+my $fixt-dir = $root-dir.add('resources').add('fixtures');
 
-my @units = [
-    Unit.new(
-        :text('{test}'),
-    ),
-];
+my $tmpl    = $fixt-dir.add('template.txt').slurp;
+my $expects = $fixt-dir.add('expects.txt').slurp;
+my %ctx     = load-yaml $fixt-dir.add('values.yaml').slurp;
 
-plan @units.elems;
+plan 1;
 
-for @units {
-    .text ~~ Stache::Base::Grammar::{'&text'};
-    is $/.Str, .text, .name // "'{.text.chomp.lines.first}' ~~ Stache::Base::Grammar::\{'&text'\}";
-}
+is Stache::render($tmpl, |%ctx), $expects, 'render a simple template';
 
 done-testing;
 
