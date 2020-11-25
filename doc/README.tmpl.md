@@ -17,3 +17,33 @@ Output:
 {{ basic-example-output }}
 ```
 
+## Structure Blocks
+
+### With Blocks
+
+Raku script:
+
+```raku
+{{ with-example }}
+```
+
+Output:
+
+```raku
+{{ with-example-output }}
+```
+
+### For Blocks
+
+Raku script:
+
+```raku
+{{ for-example }}
+```
+
+Output:
+
+```txt
+{{ for-example-output }}
+```
+

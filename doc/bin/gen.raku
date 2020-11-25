@@ -10,12 +10,12 @@ my $example-dir = $root-dir.add('examples');
 my $template = $doc-dir.add('README.tmpl.md').slurp;
 
 my %args = %();
-race for ('basic',) {
-    my $example-file = $example-dir.add($_ ~ '.raku').absolute.IO;
-    my @cmd = « $*EXECUTABLE -I $lib-dir $example-file »;
+race for $example-dir.dir.grep(* ~~ / .* '.raku' $ /) {
+    my @cmd = « $*EXECUTABLE -I $lib-dir $_ »;
+    $_.basename ~~ / (.*) '.raku' $ /;
     my $proc = run @cmd, :out;
-    %args{$_ ~ '-example'} = $example-file.slurp.trim;
-    %args{$_ ~ '-example-output'} = $proc.out.slurp.trim;
+    %args{$/[0] ~ '-example'} = $_.slurp.trim;
+    %args{$/[0] ~ '-example-output'} = $proc.out.slurp.trim;
 }
 
 my $content = Stache::render($template, |%args);
