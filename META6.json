@@ -15,7 +15,8 @@
     "YAMLish"
 	],
 	"test-depends": [
-    "META6::Query"
+    "META6::Query",
+		"FileSystem::Helpers"
 	],
   "license": "Artistic-2.0",
   "provides": {

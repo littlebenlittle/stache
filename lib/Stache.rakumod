@@ -1,15 +1,32 @@
 
-unit package Stache:auth<github:littlebenlittle>:ver<0.2.0>;
+unit package Stache:auth<github:littlebenlittle>:ver<0.2.1>;
 
 use Stache::Base;
 use YAMLish;
 
+#| render a template
 our sub render(Str:D $template, *%ctx) {
     my &render = Stache::Base::Loop.subparse(
         $template,
         :actions(Stache::Base::Loop::Actions)
     ).made;
     return &render(|%ctx)
+}
+
+#| copy a directory from src to dest, rendering any templates
+our sub render-dir(IO() $src, IO() $dest, *%ctx) {
+    if $dest.e {
+        die "$dest exists and is not an empty directory"
+          unless $dest.d and $dest.dir.elems == 0;
+    } else { mkdir $dest }
+    for $src.dir {
+        if    $_.d { render-dir $_, $dest.add($_.basename), |%ctx  }
+        elsif $_.f {
+            my $render = render $_.slurp, |%ctx;
+            $_.spurt: $render;
+        }
+        else { note "neither file nor directory: $src, skipping" }
+    }
 }
 
 sub MAIN(
