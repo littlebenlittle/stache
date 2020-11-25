@@ -1,5 +1,7 @@
 # Stache
 
+> **nb**: This project currently has an unstable API! Minor version changes may break existing code.
+
 Stache is an extensible mustache-style templating engine.
 
 ## Basic Use
