@@ -24,7 +24,7 @@ say Stache::render(
 
 Output:
 
-```raku
+```txt
 say '> # This is some Raku code';
 say '> 1 + 1';
 say 1 + 1;
@@ -57,7 +57,7 @@ say Stache::render(
 
 Output:
 
-```raku
+```txt
 name: 楽
 type: language
 ```

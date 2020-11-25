@@ -13,7 +13,7 @@ Raku script:
 
 Output:
 
-```raku
+```txt
 {{ basic-example-output }}
 ```
 
@@ -29,7 +29,7 @@ Raku script:
 
 Output:
 
-```raku
+```txt
 {{ with-example-output }}
 ```
 
