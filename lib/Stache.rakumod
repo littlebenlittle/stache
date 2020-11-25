@@ -20,11 +20,9 @@ our sub render-dir(IO() $src, IO() $dest, *%ctx) {
           unless $dest.d and $dest.dir.elems == 0;
     } else { mkdir $dest }
     for $src.dir {
-        if    $_.d { render-dir $_, $dest.add($_.basename), |%ctx  }
-        elsif $_.f {
-            my $render = render $_.slurp, |%ctx;
-            $_.spurt: $render;
-        }
+        my $target = $dest.add($_.basename);
+        if    $_.d { render-dir $_, $target, |%ctx }
+        elsif $_.f { $target.spurt: render $_.slurp, |%ctx }
         else { note "neither file nor directory: $src, skipping" }
     }
 }

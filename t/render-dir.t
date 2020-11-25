@@ -29,13 +29,14 @@ FileSystem::Helpers::temp-dir {
     my $dirC = $*tmpdir.add('C');
     my $subA = $dirA.add('sub');
     mkdir $subA;
-    my $tmpl = $dirA.add('tmpl.txt');
+    my $tmpl   = $dirA.add('file.txt');
+    my $target = $dirC.add('file.txt');
     $tmpl.spurt: '{{ stache }}';
     Stache::render-dir($dirA, $dirC, stache => 'text');
     ok $dirC.d, 'created directory';
-    ok $tmpl.f, 'created file';
+    ok $target.f, 'created file';
     cmp-ok
-        $tmpl.slurp,
+        $target.slurp,
         '~~',
         rx:s/text/,
         'rendered template';
