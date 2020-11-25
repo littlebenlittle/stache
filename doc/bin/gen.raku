@@ -1,7 +1,7 @@
 #!env raku
 
 use META6::Query;
-use Stache::Renderer;
+use Stache;
 
 my $root-dir = META6::Query::root-dir $?FILE;
 my $lib-dir = $root-dir.add('lib');
@@ -10,7 +10,7 @@ my $example-dir = $root-dir.add('examples');
 my $template = $doc-dir.add('README.tmpl.md').slurp;
 
 my %args = %();
-race for ('basic', 'extending') {
+race for ('basic',) {
     my $example-file = $example-dir.add($_ ~ '.raku').absolute.IO;
     my @cmd = « $*EXECUTABLE -I $lib-dir $example-file »;
     my $proc = run @cmd, :out;
@@ -18,7 +18,7 @@ race for ('basic', 'extending') {
     %args{$_ ~ '-example-output'} = $proc.out.slurp.trim;
 }
 
-my $content = Stache::Renderer::basic($template, |%args);
+my $content = Stache::render($template, |%args);
 
 my $readme = $root-dir.add('README.md');
 $readme.spurt($content.trim ~ "\n\n");

@@ -17,19 +17,3 @@ Output:
 {{ basic-example-output }}
 ```
 
-## Extending
-
-Writing your own parser extension is simple. Just specify how the text inside and outside the staches should be rendered.
-
-Raku script:
-
-```raku
-{{ extending-example }}
-```
-
-Output:
-
-```raku
-{{ extending-example-output }}
-```
-
