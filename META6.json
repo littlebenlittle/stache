@@ -11,12 +11,12 @@
     "template",
     "mustache"
   ],
-	"depends": [
+  "depends": [
     "YAMLish"
-	],
-	"test-depends": [
+  ],
+  "test-depends": [
     "META6::Query"
-	],
+  ],
   "license": "Artistic-2.0",
   "provides": {
     "Stache": "lib/Stache.rakumod",
