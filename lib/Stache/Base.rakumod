@@ -35,7 +35,13 @@ grammar Structure is Stache {
         <struct-close> <trailing-ws>
     }
     token struct-open  { '{{' <.ws> <{$*struct-kind}> <.ws> <struct-args> <.ws> '}}' }
-    token struct-close { '{{' <.ws> 'end' <{$*struct-kind}> <.ws> '}}' }
+    token struct-close {
+        :my $fail = False;
+        '{{' <.ws> 'end'
+        [ <{$*struct-kind}> || \S* { $fail = True } ]
+        <.ws> '}}'
+        { die "mismatched structure close $/: line {$/.prematch.lines.elems + 1}" if $fail } 
+    }
     token struct-args  { <key> }
     token key:sym<scoped> { '.' <key:sym<base>>? }
 }
