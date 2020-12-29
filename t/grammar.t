@@ -6,7 +6,7 @@ use YAMLish;
 use Stache;
 
 my $root-dir = META6::Query::root-dir $?FILE;
-my $fixt-dir = $root-dir.add('resources').add('fixtures');
+my $fixt-dir = $root-dir.add('resources').add('fixtures').add('grammar');
 
 my $tmpl    = $fixt-dir.add('template.txt').slurp;
 my $expects = $fixt-dir.add('expects.txt').slurp;
