@@ -1,5 +1,5 @@
 
-unit package Stache::Base:auth<github:littlebenlittle>:ver<0.2.0>;
+unit package Stache::Base:auth<github:littlebenlittle>:ver<0.2.1>;
 
 grammar Stache {
     token TOP { <term>+ }
