@@ -1,7 +1,7 @@
 {
   "meta-version": "0",
   "name": "Stache",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "auth": "github:littlebenlittle",
   "description": "extensible mustache templating",
   "source-url": "https://github.com/littlebenlittle/stache.git",
@@ -11,12 +11,12 @@
     "template",
     "mustache"
   ],
-	"depends": [
+  "depends": [
     "YAMLish"
-	],
-	"test-depends": [
+  ],
+  "test-depends": [
     "META6::Query"
-	],
+  ],
   "license": "Artistic-2.0",
   "provides": {
     "Stache": "lib/Stache.rakumod",

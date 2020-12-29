@@ -1,5 +1,5 @@
 
-unit package Stache:auth<github:littlebenlittle>:ver<0.2.0>;
+unit package Stache:auth<github:littlebenlittle>:ver<0.2.1>;
 
 use Stache::Base;
 use YAMLish;
